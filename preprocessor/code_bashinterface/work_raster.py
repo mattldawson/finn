@@ -38,9 +38,6 @@ def sec4_download_raster(year_rst, download_global_raster=True, af_fnames = None
 
         results_indb = downloader.find_tiles_indb(data=wkt,
                                                   knd='wkt', tag_lct=tag_lct, tag_vcf=tag_vcf)
-    #print(results_indb)
-    #print()
-
 
     if results_indb['n_need'] == 0:
         print('All fire are contained in raster')
@@ -139,14 +136,16 @@ def sec5_import_raster(year_rst, raster_tasks):
                     search_string)
         rst_import.main(tag_vcf, fnames=fnames_vcf, workdir = workdir_vcf)
 
-    if need_to_import_regnum: 
-        if not os.path.exists(os.path.join(workdir_regnum, 'All_Countries.shp')): 
-            subprocess.run(['wget', '-P', workdir_regnum, 
-                'https://s3-us-west-2.amazonaws.com/earthlab-finn/All_Countries.zip'], 
-                check=True) 
-            subprocess.run(['unzip', os.path.join(workdir_regnum, 'All_Countries.zip'), '-d' , 
-                workdir_regnum ], check=True)
-        polygon_import.main(tag_regnum, shpname = os.path.join(workdir_regnum, 'All_Countries.shp'))
+    if need_to_import_regnum:
+        shape_file_url = 'https://github.com/nvkelso/natural-earth-vector/blob/master/10m_cultural/'
+        shape_file = 'ne_10m_admin_0_countries.shp'
+        os.makedirs(workdir_regnum, exist_ok=True)
+        if not os.path.exists(os.path.join(workdir_regnum, shape_file)):
+            cmd = ['curl', '-L', '-o',
+                os.path.join(workdir_regnum, shape_file),
+                f'{shape_file_url}{shape_file}']
+            subprocess.run(cmd, check=True)
+        polygon_import.main(tag_regnum, shpname = os.path.join(workdir_regnum, shape_file))
 
 def main(year_rst, tag_af=None, af_fnames=None):
 
