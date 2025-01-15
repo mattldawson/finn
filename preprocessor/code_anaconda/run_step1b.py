@@ -167,8 +167,11 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
             #subprocess.run(shlex.split(cmd), check=True)
             try:
                 subprocess.run(cmd, check=True, stderr=STDOUT, stdout=ofile)
-            except subprocess.CalledProcessError as err: 
-                print(f"\nERROR from 'step1b_work': \n\n", err.stderr.decode(),)
+            except subprocess.CalledProcessError as err:
+                if err.stderr:
+                  print(f"\nERROR from 'step1b_work': \n\n", err.stderr.decode(),)
+                else:
+                  print(f"\nERROR from 'step1b_work': \n\n", err)
                 raise
 #        print("starting post %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
 #        cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1_post.sql' )))]

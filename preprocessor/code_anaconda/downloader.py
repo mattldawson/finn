@@ -40,23 +40,31 @@ def download_all(url, droot=default_droot):
 def download_one(url, droot=None, ddir=None):
     """download list of files but put the same dir as download all would"""
 
+    cmd = ['curl', '-sS', '-L', '-n', '-c', '~/.urs_cookies', '-b', '~/.urs_cookies']
 
-    cmd = ['wget', '-nc']
-
-    if not ddir is None:
+    if ddir is not None:
         # if ddir is specified, put file there
-        cmd.extend(['--no-directories', '-P', ddir])
+        cmd.extend(['--create-dirs', '-o', os.path.join(ddir, os.path.basename(url))])
     else:
         # if not, use droot, and mirror the dir structure
         if droot is None:
             droot = default_droot
-        cmd.extend(['--force-directories', '-P', droot])
-    cmd.extend(['--user', os.environ['EARTHDATAUSER']])
-    cmd.extend(['--password', os.environ['EARTHDATAPW']])
-    #cmd.extend(['--no-verbose'])
-    cmd.extend(['--quiet'])
+        cmd.extend(['--create-dirs', '-o', os.path.join(droot, urlparse(url).netloc, urlparse(url).path.lstrip('/'))])
+
+    # Add authentication
+    cmd.extend(['-H', f"Authorization: Bearer {os.environ['EARTHDATATOKEN']}"])
+
+    # Add the URL
     cmd.append(url)
-    subprocess.run(cmd, check=True)
+
+    # Run the command and capture errors
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
+        print(f"Output: {e.output}")
+        raise
+
 
 def download_only_needed(url, tiles=None, region=None, region_knd=None, droot=default_droot):
     """get list of tiles or points and grab only tiles that cover points"""
@@ -118,19 +126,17 @@ def check_downloads(fname, get_cksum=None):
         def earthdata_cksum(fname):
             # assume that the data file comes with xml file
             xname = fname + '.xml'
-            warnings.filterwarnings("ignore", category=UserWarning, module='bs4',
+            warnings.filterwarnings("ignore",
                     message='.*parsing an XML document using an HTML parser.*')
             soup = BeautifulSoup(open(xname, 'r'), 'html.parser')
-            cksum, filsz = [soup.findAll(_)[0].contents[0] for _ in ('checksum', 'filesize')]
-            return cksum, filsz
+            cksum, filsz, checkSumType = [soup.findAll(_)[0].contents[0] for _ in ('checksum', 'filesize', 'checksumtype')]
+            return cksum, filsz, checkSumType
         get_cksum = earthdata_cksum
 
-    typ = 'CRC'  # assume it is cksum
-    cksum0 = ['0','0']
+    cksum0 = ['0','0','CRC'] # assume it is cksum
     try:
         cksum0 = get_cksum(fname)
         typ = cksum0[2]
-        cksum0 = cksum0[:2]
     except:
         pass
 
@@ -139,13 +145,14 @@ def check_downloads(fname, get_cksum=None):
         md5 = [_.decode() for _ in p.stdout.split()]
         p = subprocess.run(['stat','-c', '%s' , fname], stdout=subprocess.PIPE)
         siz = p.stdout.split()[0].decode()
-        cksum = [md5[0] , siz]
+        cksum = [md5[0] , siz, typ]
     else:
         cmd = 'cksum'
         p = subprocess.Popen(['cksum', fname], stdout=subprocess.PIPE)
         cksum = p.stdout.read()
         p.communicate()
-        cksum = [_.decode() for _ in cksum.split()[:2]]
+        cksumout = [_.decode() for _ in cksum.split()[:2]]
+        cksum = [cksumout[0], cksumout[1], typ]
 
     if all((p)==(q) for (p,q) in zip(cksum0, cksum)):
         return True
