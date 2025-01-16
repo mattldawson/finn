@@ -96,7 +96,7 @@ def sec4_download_raster(year_rst, download_global_raster=True, af_fnames = None
             'ddir_vcf': ddir_vcf,
             }
 
-def sec5_import_raster(year_rst, raster_tasks):
+def sec5_import_raster(year_rst, raster_tasks, shape_file):
 
     need_to_import_lct = raster_tasks['need_to_import_lct']
     need_to_import_vcf = raster_tasks['need_to_import_vcf']
@@ -137,17 +137,23 @@ def sec5_import_raster(year_rst, raster_tasks):
         rst_import.main(tag_vcf, fnames=fnames_vcf, workdir = workdir_vcf)
 
     if need_to_import_regnum:
-        shape_file_url = 'https://github.com/nvkelso/natural-earth-vector/blob/master/10m_cultural/'
-        shape_file = 'ne_10m_admin_0_countries.shp'
-        os.makedirs(workdir_regnum, exist_ok=True)
-        if not os.path.exists(os.path.join(workdir_regnum, shape_file)):
-            cmd = ['curl', '-L', '-o',
-                os.path.join(workdir_regnum, shape_file),
-                f'{shape_file_url}{shape_file}']
-            subprocess.run(cmd, check=True)
-        polygon_import.main(tag_regnum, shpname = os.path.join(workdir_regnum, shape_file))
+        if not shape_file:
+            shape_file_url = 'https://github.com/nvkelso/natural-earth-vector/raw/ca96624a56bd078437bca8184e78163e5039ad19/10m_cultural/'
+            shape_file_name = 'ne_10m_admin_0_countries'
+            shape_file_extensions = [ '.cpg', '.dbf', '.prj', '.shp', '.shx' ]
+            os.makedirs(workdir_regnum, exist_ok=True)
+            for ext in shape_file_extensions:
+                shape_file = f"{shape_file_name}{ext}"
+                output_path = os.path.join(workdir_regnum, shape_file)
+                if os.path.exists(output_path):
+                    os.remove(output_path)
+                cmd = ['curl', '-L', '-o', output_path, f'{shape_file_url}{shape_file}']
+                print(f"Running: {' '.join(cmd)}")
+                subprocess.run(cmd, check=True)
+            shape_file = os.path.join(workdir_regnum, f"{shape_file_name}.shp")
+        polygon_import.main(tag_regnum, shpname = shape_file)
 
-def main(year_rst, tag_af=None, af_fnames=None):
+def main(year_rst, tag_af=None, af_fnames=None, shape_file=None):
 
 
     out = sys.stdout
@@ -163,7 +169,7 @@ def main(year_rst, tag_af=None, af_fnames=None):
         download_global_raster = False
 
     raster_tasks = sec4_download_raster(year_rst, download_global_raster=download_global_raster, af_fnames=af_fnames)
-    sec5_import_raster(year_rst, raster_tasks)
+    sec5_import_raster(year_rst, raster_tasks, shape_file)
 
 if __name__ == '__main__':
     # user specify which year to download
@@ -177,6 +183,8 @@ if __name__ == '__main__':
             default=None, required=True, help='dataset year for raster', type=int)
     parser.add_argument('af_fnames', 
             default=None, nargs='*', help='AF file name(s)', type=str)
+    parser.add_argument('-s', '--shape_file',
+            default=None, help='shape file for global regions', type=str)
 
     args = parser.parse_args()
 
