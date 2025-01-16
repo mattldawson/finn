@@ -481,7 +481,7 @@ $$
         center = vor.points.mean(axis=0)
         if radius is None:
 
-            radius = vor.points.ptp(axis=0).max() * 3
+            radius = np.ptp(vor.points, axis=0).max() * 3
     
         # construct a map containing all ridges for a given point
         all_ridges = {}
@@ -540,7 +540,7 @@ $$
 
     # add dummy points
     center = pnts.mean(axis=0)
-    radius = pnts.ptp(axis=0).max() * 3
+    radius = np.ptp(pnts, axis=0).max() * 3
     dummys = np.tile(center, 4).reshape((4,2)) + radius * np.array([[1,1],[1,-1],[-1,-1],[-1,1]])
     pnts2 = np.vstack((pnts, dummys))
     #plpy.notice('pnts2: \n%s' % pnts2)
@@ -636,9 +636,9 @@ $$
     cas = 'x'
     #plpy.notice('xy: %s', [(p,q) for p,q in zip(x,y)])
     p = np.array([x, y]).T
-    #radius = p.ptp(axis=0).max() 
-    #radius = min(p.ptp(axis=0).max() , 1)  # 1 degree should be large enough 
-    radius = p.ptp(axis=0).max() * 3 
+    #radius = np.ptp(p, axis=0).max() 
+    #radius = min(np.ptp(p, axis=0).max() , 1)  # 1 degree should be large enough 
+    radius = np.ptp(p, axis=0).max() * 3 
     if len(p) == 2:
         cas = '2'
         #plpy.notice("p: %s" % p)
@@ -759,7 +759,7 @@ $$
                             direction = -direction
                             pp = np.append(q, center).reshape((-1,2))
                             #plpy.notice('pp: %s' % pp)
-                            radius = pp.ptp(axis=0).max() * 3
+                            radius = np.ptp(pp, axis=0).max() * 3
                             side_point = center 
                             cas = '3o'
                 else:
@@ -804,7 +804,14 @@ $$
     else:
         raise RuntimeError("works only with 2 or 3 pnts")
         #plpy.notice("cas,lst: %s,%s" % (cas,lst))
-    return lst
+    lst_converted = []
+    for item in lst:
+        x_coords = [float(x) for x in item[0]]
+        y_coords = [float(y) for y in item[1]]
+        index = item[2]
+        lst_converted.append([x_coords, y_coords, index])
+
+    return lst_converted
 $$
 language plpython3u immutable;
 -- language plpython2u volatile;

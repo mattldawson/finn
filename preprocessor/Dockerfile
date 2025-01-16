@@ -63,6 +63,9 @@ RUN /usr/bin/pip3 install numpy scipy networkx # no specfic version, 2023-04-08
 
 ENV FINN_INPUT_FOLDER=/input_data
 ENV FINN_OUTPUT_FOLDER=/output_data
+ENV FINN_ROOT=/finn
+ENV FINN_DRIVER=from_inside_docker
+ENV FINN_DATE_DEFINITION=UTC
 
 EXPOSE 8888
 

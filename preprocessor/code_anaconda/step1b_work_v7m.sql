@@ -35,7 +35,7 @@ ALTER TABLE work_div_oned ALTER COLUMN polyid SET NOT NULL;
 insert into work_pnt_oned 
 (rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid, alg_agg, fireid1, ndetect1)
 select rawid, geom_pnt, lon, lat, scan, track, acq_date_use, confident, instrument, cleanid , alg_agg, fireid1, ndetect1
-from work_pnt where acq_date_use = :oned::text::date;
+from work_pnt where acq_date_use = :'oned'::text::date;
 
 do language plpgsql $$
 	declare
@@ -234,7 +234,7 @@ end $$;
 update work_pnt_oned set
 fireid2 = cleanid,
 ndetect2 = 1
-where acq_date_use = :oned::date 
+where acq_date_use = :'oned'::date 
 and fireid2 is null;
 
 
@@ -365,7 +365,7 @@ where l.fireid = p.fireid2 and p.alg_agg = 2;
 
 insert into work_lrg_oned
 select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm, alg_agg
-from work_lrg1 where acq_date_use = :oned::text::date and alg_agg = 1;
+from work_lrg1 where acq_date_use = :'oned'::text::date and alg_agg = 1;
 
 insert into work_lrg
 select fireid, geom_lrg, acq_date_use, ndetect, area_sqkm, alg_agg
@@ -385,13 +385,13 @@ update work_pnt set
 fireid = fireid1, 
 ndetect = ndetect1
 where alg_agg = 1
-and acq_date_use = :oned::text::date;
+and acq_date_use = :'oned'::text::date;
 
 update work_pnt set
 fireid = fireid2, 
 ndetect = ndetect2
 where alg_agg = 2
-and acq_date_use = :oned::text::date;
+and acq_date_use = :'oned'::text::date;
 
 -- -- debugging
 -- insert into dbg_pnt_oned
@@ -752,7 +752,7 @@ end $$;
 WITH foo AS (
 	SELECT polyid, unnest(cleanids) cleanid
 	FROM work_div
-	where acq_date_use = :oned::text::date
+	where acq_date_use = :'oned'::text::date
 )
 UPDATE work_pnt p SET
 polyid = foo.polyid
@@ -771,7 +771,7 @@ create temporary table tmp_oned (
 	oned text
 );
 insert into tmp_oned
-(oned) values (:oned);
+(oned) values (:'oned');
 
 
 -- just put changes posteriori to the log

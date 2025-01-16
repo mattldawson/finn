@@ -161,7 +161,7 @@ def main(tag, first_day=None, last_day=None, vorimp='scipy', gt=3, buf0=False, v
         for dt in dates:
             print("starting work %s: %s" % (dt.strftime('%Y-%m-%d'), datetime.datetime.now()))
             cmd = ['psql',] + ['-f', (os.path.join(os.path.dirname(__file__), ('step1b_work_%s.sql' % ver)))]
-            cmd += ['-v', ("tag=%s" % tag)] + ['-v', ("oned='%s'" % dt.strftime('%Y-%m-%d'))]
+            cmd += ['-v', ("tag=%s" % tag)] + ['-v', ('oned="%s"' % dt.strftime('%Y-%m-%d'))]
             ofile = open('log.step1b.o{0}'.format( dt.strftime('%Y%m%d')), 'w')
             #print(cmd)
             #subprocess.run(shlex.split(cmd), check=True)
